@@ -206,6 +206,6 @@ class Main extends PluginBase implements Listener{
 	}
 	
 	public static function NewId(): int{
-	  return count(array_keys($this->getDB()->getAll()));
+	  return count(array_keys(Main::getInstance()->getDB()->getAll()));
 	}
 }
