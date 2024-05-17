@@ -35,6 +35,7 @@ use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerMoveEvent;
 use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\world\World;
+use pocketmine\world\Position;
 use pocketmine\player\Player;
 use pocketmine\utils\Config;
 use pocketmine\utils\SingletonTrait;
@@ -44,6 +45,8 @@ use pocketmine\item\ItemTypeIds;
 use pocketmine\data\bedrock\EnchantmentIdMap;
 use pocketmine\item\enchantment\Enchantment;
 use pocketmine\item\enchantment\ItemFlags;
+
+use Vecnavium\FormsUI\CustomForm;
 
 class Main extends PluginBase implements Listener{
   
@@ -62,7 +65,7 @@ class Main extends PluginBase implements Listener{
   public function onEnable(): void{
     self::setInstance($this);
 		$this->getServer()->getCommandMap()->register("teleportto", new TpToCommand($this));
-    $this->db = new Config($this->getDataFolder() . "db.yml", 2);
+    $this->db = new Config($this->getDataFolder() . "db.yml", 2, []);
     EnchantmentIdMap::getInstance()->register(self::FAKE_ENCH_ID, new Enchantment("Glow", 1, ItemFlags::ALL, ItemFlags::NONE, 1));
     $this->config = new Config($this->getDataFolder() . "config.yml", 2, [
       "DeleteForm" => [
@@ -94,7 +97,7 @@ class Main extends PluginBase implements Listener{
 	  // Item
 	  $item = $event->getItem();
 	  $tag = $item->getNamedTag();
-	  if ($item->getTypeIds() !== ItemTypeIds::DIAMOND_HOE || $item->getCustomName() !== " §aTeleport§bTo ")return false;
+	  if ($item->getTypeId() !== ItemTypeIds::DIAMOND_HOE || $item->getCustomName() !== " §aTeleport§bTo ")return false;
 	  if (!$tag instanceof CompoundTag || $tag->getString("TeleportTo") == null)return false;
 	  if ($player->isSneaking()) {
   	  if (!isset($this->save[$player->getName()])) {
@@ -135,11 +138,11 @@ class Main extends PluginBase implements Listener{
 	}
 	
 	public function addTeleportForm(Player $player, ?Position $from = null, ?Position $to = null) {
-    $form = new CustomForm(function(Player $player, $data) use ($id){
+    $form = new CustomForm(function(Player $player, $data){
       if ($data === null){
 	      return false;
 	    }
-	    if (!(isset($data[0]) && isset($data[1]))) {
+	    if (empty($data[0]) || empty($data[1])) {
 	      $player->sendMessage("§gTeleport§bTo §f>§9>  §cFailed to save Teleport");
 	    }
 	    $id = self::NewId();
@@ -158,13 +161,13 @@ class Main extends PluginBase implements Listener{
   
   public function removeTeleportForm(Player $player){
     $all = "";
-    foreach ($this->getDB() as $id => $data){
+    foreach ($this->getDB()->getAll() as $id => $data){
       $from = implode(" ", $data["From"]);
       $to = implode(" ", $data["To"]);
-      if ($id - 1 == $this->config->getNested("DeleteForm.teleports-count"))break;
+      if (($id - 1) == $this->config->getNested("DeleteForm.teleports-count"))break;
       $all .= "§eId: §f$id  §eFrom: §f$from  §eTo: §f$to \n";
     }
-    $form = new CustomForm(function(Player $player, $data) use($from, $to){
+    $form = new CustomForm(function(Player $player, $data){
       if ($data === null){
 	      return false;
 	    }
@@ -181,7 +184,7 @@ class Main extends PluginBase implements Listener{
   }
 	
 	public function addNewTeleport(string $id, Position $from, Position $to){
-	  $this->db->set($id, [
+	  $this->getDB()->set($id, [
 	    "From" => [
 	      "X" => floor($from->x),
 	      "Y" => floor($from->y),
@@ -198,11 +201,11 @@ class Main extends PluginBase implements Listener{
 	}
 	
 	public function removeTeleport(string $id){
-	  if (!$this->db->exists($id))return false;
-	  $this->db->remove($id);
+	  if (!$this->getDB()->exists($id))return false;
+	  $this->getDB()->remove($id);
 	}
 	
 	public static function NewId(): int{
-	  return count(array_keys($this->db->getAll()));
+	  return count(array_keys($this->getDB()->getAll()));
 	}
 }
