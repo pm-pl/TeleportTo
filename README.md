@@ -13,3 +13,6 @@ Command | Description
 # YouTube
 - @AEDXDEV
 - https://youtube.com/@aedxdev?si=hGoo2eohlFlFbBNu
+
+# Discord
+- aedxdev
