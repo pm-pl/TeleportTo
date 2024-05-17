@@ -46,7 +46,7 @@ use pocketmine\data\bedrock\EnchantmentIdMap;
 use pocketmine\item\enchantment\Enchantment;
 use pocketmine\item\enchantment\ItemFlags;
 
-use Vecnavium\FormsUI\CustomForm;
+use AEDXDEV\TeleportTo\libs\Vecnavium\FormsUI\CustomForm;
 
 class Main extends PluginBase implements Listener{
   
