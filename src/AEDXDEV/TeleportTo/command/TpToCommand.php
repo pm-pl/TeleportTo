@@ -1,0 +1,103 @@
+<?php
+
+/**
+  *  A free plugin for PocketMine-MP.
+  *	
+  *	Copyright (c) AEDXDEV
+  *  
+  *	Youtube: AEDX DEV 
+  *	Discord: aedxdev
+  *	Github: AEDXDEV
+  *	Email: aedxdev@gmail.com
+  *	Donate: https://paypal.me/AEDXDEV
+  *   
+  */
+
+namespace AEDXDEV\TeleportTo\command;
+
+use AEDXDEV\TeleportTo\Main;
+
+use pocketmine\item\Item;
+use pocketmine\item\VanillaItems;
+use pocketmine\player\Player;
+use pocketmine\command\Command;
+use pocketmine\command\CommandSender;
+use pocketmine\nbt\tag\ListTag;
+use pocketmine\data\bedrock\EnchantmentIdMap;
+use pocketmine\item\enchantment\EnchantmentInstance;
+
+class TpToCommand extends Command{
+  
+  private Main $plugin; 
+  
+  public array $from = [];
+  
+  public function __construct(Main $plugin){
+    $this->plugin = $plugin;
+    parent::__construct("teleportto", "TeleportTo Main command", null, ["tpto"]);
+    $this->setPermission("teleportto.cmd");
+  }
+  
+  public function execute(CommandSender $sender, string $label, array $args){
+    $name = $sender->getName();
+    switch ($args[0] ?? "help") {
+      case "help":
+				$sender->sendMessage("§e========================");
+				$sender->sendMessage("§a- /" . $label . " item (give setup item)");
+				$sender->sendMessage("§a- /" . $label . " from (get the first position)");
+				$sender->sendMessage("§a- /" . $label . " to (get the second position)");
+				$sender->sendMessage("§a- /" . $label . " get (get id from click on teleport)");
+				$sender->sendMessage("§a- /" . $label . " remove (remove or delete teleport by id)");
+				$sender->sendMessage("§e========================");
+			break;
+			case "item":
+			  $player = $sender;
+        if (isset($args[1])) {
+          $player = $this->plugin->getServer()->getPlayerByPrefix($args[1]);
+        }
+        if (!$player instanceof Player)return;
+        $item = VanillaItems::DIAMOND_HOE()->setCustomName(" §aTeleport§bTo ");
+        $tag = $item->getNamedTag();
+        $tag->setTag(Item::TAG_ENCH, new ListTag());
+        $tag->setString("TeleportTo", "TeleportTo");
+        $item->setNamedTag($tag);
+        $item->addEnchantment(new EnchantmentInstance(EnchantmentIdMap::getInstance()->fromId(Main::FAKE_ENCH_ID)));
+        $player->getInventory()->addItem($item);
+			break;
+			case "from":
+			  if (!$sender instanceof Player)return;
+			  $from = $sender->getPosition();
+			  $this->from[$name] = $from;
+			  $sender->sendMessage("§aFrom: §e" . implode(" ", [$from->x, $from->y, $from->z]));
+			break;
+			case "to":
+			  if (!$sender instanceof Player)return;
+			  if (!isset($this->from[$name])) {
+			    $sender->sendMessage("use '/" . $label . " from' before '/" . $label . " to'");
+			    break;
+			  }
+			  $from = $this->from[$name];
+			  $to = $sender->getPosition();
+			  $sender->sendMessage("§aTo: §e" . implode(" ", [$to->x, $to->y, $to->z]));
+			  $this->plugin->addTeleportForm($sender, $from, $to);
+			  unset($this->from[$name]);
+			break;
+			case "get":
+			  if (isset($this->plugin->get[$name])){
+			    $sender->sendMessage("§eYou are already used this command.");
+			    $sender->sendMessage("§eClick on a teleport place to get id");
+			    break;
+			  }
+			  $this->plugin->get[$name] = "";
+			  $sender->sendMessage("§aClick on the teleport place to get id");
+			break;
+			case "reomve":
+			case "delete":
+			  if (!isset($args[1])) {
+			    $sender->sendMessage("§cUsage: /" . $label . " " . $args[0] . "<Id>");
+			  }
+			  $this->plugin->removeTeleport($id);
+			break;
+    }
+  }
+}
