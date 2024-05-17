@@ -109,7 +109,7 @@ class TpToCommand extends Command{
 			  if (!isset($args[1])) {
 			    $sender->sendMessage("§cUsage: /" . $label . " " . $args[0] . "<Id>");
 			  }
-			  $this->plugin->removeTeleport($id);
+			  $this->plugin->removeTeleport($args[1]);
 			break;
     }
   }
