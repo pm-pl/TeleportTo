@@ -1,0 +1,9 @@
+name: TeleportTo
+main: AEDXDEV\TeleportTo\Main
+version: 1.0.0
+api: 5.0.0
+author: AEDXDEV
+description: Teleport from a place to place
+permissions:
+  teleportto.cmd:
+    default: op
