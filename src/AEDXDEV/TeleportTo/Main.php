@@ -75,7 +75,7 @@ class Main extends PluginBase implements Listener{
       ]);
 	}
 	
-	public function onClick(PlayerInteractEvent $event){$from = implode(" ", $data["From"]);
+	public function onClick(PlayerInteractEvent $event){
 	  $player = $event->getPlayer();
 	  $name = $player->getName();
 	  $vector = $event->getTouchVector();
