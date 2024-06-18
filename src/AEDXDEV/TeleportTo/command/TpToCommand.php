@@ -41,12 +41,11 @@ use pocketmine\item\enchantment\EnchantmentInstance;
 
 class TpToCommand extends Command{
   
-  private Main $plugin; 
-  
   public array $from = [];
   
-  public function __construct(Main $plugin){
-    $this->plugin = $plugin;
+  public function __construct(
+    private Main $plugin
+  ){
     parent::__construct("teleportto", "TeleportTo Main command", null, ["tpto"]);
     $this->setPermission("teleportto.cmd");
   }
@@ -56,11 +55,11 @@ class TpToCommand extends Command{
     switch ($args[0] ?? "help") {
       case "help":
 				$sender->sendMessage("§e========================");
-				$sender->sendMessage("§a- /" . $label . " item (give setup item)");
-				$sender->sendMessage("§a- /" . $label . " from (get the first position)");
-				$sender->sendMessage("§a- /" . $label . " to (get the second position)");
-				$sender->sendMessage("§a- /" . $label . " get (get id from click on teleport)");
-				$sender->sendMessage("§a- /" . $label . " remove (remove or delete teleport by id)");
+				$sender->sendMessage("§a- /" . $label . " item - give setup item");
+				$sender->sendMessage("§a- /" . $label . " from - get the first position");
+				$sender->sendMessage("§a- /" . $label . " to - get the second position");
+				$sender->sendMessage("§a- /" . $label . " get - get id from click on teleport");
+				$sender->sendMessage("§a- /" . $label . " remove - remove or delete teleport by id");
 				$sender->sendMessage("§e========================");
 			break;
 			case "item":
@@ -107,7 +106,7 @@ class TpToCommand extends Command{
 			case "reomve":
 			case "delete":
 			  if (!isset($args[1])) {
-			    $sender->sendMessage("§cUsage: /" . $label . " " . $args[0] . "<Id>");
+			    $sender->sendMessage("§cUsage: /" . $label . " " . $args[0] . "<Id: int>");
 			  }
 			  $this->plugin->removeTeleport($args[1]);
 			break;
