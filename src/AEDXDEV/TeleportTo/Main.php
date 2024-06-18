@@ -195,12 +195,12 @@ class Main extends PluginBase implements Listener{
   }
   
   public function removeSureForm(Player $player, int $id){
-    $form = new ModalForm(function (Player $player, $data) use ($sender) {
+    $form = new ModalForm(function (Player $player, $data) use ($id) {
       if ($data == true) {
         $this->removeTeleport($id);
       }
     });
-    $form->setTitle(self::$prefix);
+    $form->setTitle("§gTeleport§bTo");
     $form->setContent("§eAre you sure from removing the teleport?");
     $form->setButton1("§aYes");
     $form->setButton2("§cNo");
