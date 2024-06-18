@@ -29,6 +29,7 @@
 namespace AEDXDEV\TeleportTo;
 
 use AEDXDEV\TeleportTo\command\TpToCommand;
+use AEDXDEV\TeleportTo\task\ParticleTask;
 
 use pocketmine\plugin\PluginBase;
 use pocketmine\event\Listener;
@@ -36,6 +37,7 @@ use pocketmine\event\player\PlayerMoveEvent;
 use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\world\World;
 use pocketmine\world\Position;
+use pocketmine\item\Item;
 use pocketmine\player\Player;
 use pocketmine\utils\Config;
 use pocketmine\utils\SingletonTrait;
@@ -47,6 +49,7 @@ use pocketmine\item\enchantment\Enchantment;
 use pocketmine\item\enchantment\ItemFlags;
 
 use AEDXDEV\TeleportTo\libs\Vecnavium\FormsUI\CustomForm;
+use AEDXDEV\TeleportTo\libs\Vecnavium\FormsUI\ModalForm;
 
 class Main extends PluginBase implements Listener{
   
@@ -64,6 +67,7 @@ class Main extends PluginBase implements Listener{
   
   public function onEnable(): void{
     self::setInstance($this);
+    $this->getServer()->getPluginManager()->registerEvents($this, $this);
 		$this->getServer()->getCommandMap()->register("teleportto", new TpToCommand($this));
     $this->db = new Config($this->getDataFolder() . "db.yml", 2, []);
     EnchantmentIdMap::getInstance()->register(self::FAKE_ENCH_ID, new Enchantment("Glow", 1, ItemFlags::ALL, ItemFlags::NONE, 1));
@@ -72,22 +76,19 @@ class Main extends PluginBase implements Listener{
         "teleports.enable" => true,
         "teleports.count" => 25,
       ]
-      ]);
+    ]);
+    $this->getScheduler()->scheduleRepeatingTask(new ParticleTask(), 20);
 	}
 	
 	public function onClick(PlayerInteractEvent $event){
 	  $player = $event->getPlayer();
-	  $name = $player->getName();
-	  $vector = $event->getTouchVector();
-	  $pos = new Position($vector->x, $vector->y, $vector->z, $player->getWorld());
+    $blockPos = $event->getBlock()->getPosition();
+    $pos = Position::fromObject($blockPos->asVector3()->getSide($event->getFace()), $blockPos->getWorld());
 	  // get Id
 	  if (isset($this->get[$player->getName()])) {
-  	  $m = $this->getServer()->getWorldManager();
   	  foreach ($this->getDB()->getAll() as $id => $data){
-  	    $from = $data["From"];
-  	    $from = new Position($from["X"], $from["Y"], $from["Z"], $m->getWorldByName($from["World"]));
-  	    $to = $data["To"];
-  	    $to = new Position($to["X"], $to["Y"], $to["Z"], $m->getWorldByName($to["World"]));
+  	    $from = $this->toPos($data["From"]);
+  	    $to = $this->toPos($data["To"]);
   	    if ($from->distance($pos) < 2 || $to->distance($pos) < 2) {
   	      $player->sendMessage("§aId: §e" . $id);
   	    }
@@ -96,21 +97,31 @@ class Main extends PluginBase implements Listener{
 	  }
 	  // Item
 	  $item = $event->getItem();
-	  $tag = $item->getNamedTag();
 	  if ($item->getTypeId() !== ItemTypeIds::DIAMOND_HOE || $item->getCustomName() !== " §aTeleport§bTo ")return false;
-	  if (!$tag instanceof CompoundTag || $tag->getString("TeleportTo") == null)return false;
+	  if ($item->getNamedTag()->getString("TeleportTo", null) == null)return false;
 	  if ($player->isSneaking()) {
+	    foreach ($this->getDB()->getAll() as $id => $data){
+	      $from = $this->toPos($data["From"]);
+        $to = $this->toPos($data["To"]);
+        if ($from->distance($pos) < 2) {
+          if (isset($this->save[$player->getName()])) {
+            $player->sendMessage("§gTeleport§bTo §f>§9>  §cYou can't add a Teleport here.");
+          } else {
+            $this->removeSureForm($player, $id);
+          }
+        }
+      }
   	  if (!isset($this->save[$player->getName()])) {
   	    // From
-  	    $this->save[$name] = $pos;
+  	    $this->save[$player->getName()] = $pos;
   	    $player->sendMessage("§aFrom: §e" . implode(" ", [$pos->x, $pos->y, $pos->z]));
   	  } else {
   	    // To
-  	    $from = $this->save[$name];
+  	    $from = $this->save[$player->getName()];
   	    $to = $pos;
   	    $player->sendMessage("§aTo: §e" . implode(" ", [$pos->x, $pos->y, $pos->z]));
   		  $this->addTeleportForm($player, $from, $to);
-  			  unset($this->save[$name]);
+  		  unset($this->save[$player->getName()]);
   	  }
   	  return false;
 	  }
@@ -119,14 +130,13 @@ class Main extends PluginBase implements Listener{
 	
 	public function onMove(PlayerMoveEvent $event){
 	  $player = $event->getPlayer();
-	  $to_ = $event->getTo();
 	  $m = $this->getServer()->getWorldManager();
   	foreach ($this->getDB()->getAll() as $id => $data){
   	  $from = $data["From"];
   	  $from = new Position($from["X"], $from["Y"], $from["Z"], $m->getWorldByName($from["World"]));
   	  $to = $data["To"];
   	  $to = new Position($to["X"], $to["Y"], $to["Z"], $m->getWorldByName($to["World"]));
-  	  if ($from->distance($to_) < 2){
+  	  if ($from->distance($player->getPosition()) < 1.3){
   	    $player->teleport($to);
   	  }
     }
@@ -150,12 +160,13 @@ class Main extends PluginBase implements Listener{
 	    $from = new Position($from[0], $from[1], $from[2], $player->getWorld());
 	    $to = explode(" ", $data[1]);
 	    $to = new Position($to[0], $to[1], $to[2], $player->getWorld());
-	    $this->addNewTeleport($id, $from, $to);
+	    $this->addNewTeleport($id, $from, $to, $data[2]);
 	    $player->sendMessage("§gTeleport§bTo §f>§9>  §aThe Teleport §8[§7{$id}§8] §awas saved successfully");
 	  });
-    $form->setTitle("§gTeleport§bTo");
+    $form->setTitle("§6Teleport§bTo");
     $form->addInput("From", " from position", ($from !== null ? implode(" ", [$from->x, $from->y, $from->z]) : ""));
     $form->addInput("To", " to position", ($to !== null ? implode(" ", [$to->x, $to->y, $to->z]) : ""));
+    $form->addToggle("Particle", true);
     $form->sendToPlayer($player);
   }
   
@@ -164,7 +175,7 @@ class Main extends PluginBase implements Listener{
     foreach ($this->getDB()->getAll() as $id => $data){
       $from = implode(" ", $data["From"]);
       $to = implode(" ", $data["To"]);
-      if (($id - 1) == $this->config->getNested("DeleteForm.teleports-count"))break;
+      if ($id == $this->config->getNested("DeleteForm.teleports-count"))break;
       $all .= "§eId: §f$id  §eFrom: §f$from  §eTo: §f$to \n";
     }
     $form = new CustomForm(function(Player $player, $data){
@@ -182,8 +193,25 @@ class Main extends PluginBase implements Listener{
     $form->addInput("Id", "teleport id");
     $form->sendToPlayer($player);
   }
+  
+  public function removeSureForm(Player $player, int $id){
+    $form = new ModalForm(function (Player $player, $data) use ($sender) {
+      if ($data == true) {
+        $this->removeTeleport($id);
+      }
+    });
+    $form->setTitle(self::$prefix);
+    $form->setContent("§eAre you sure from removing the teleport?");
+    $form->setButton1("§aYes");
+    $form->setButton2("§cNo");
+    $player->sendForm($form);
+  }
+  
+  public function toPos(array $data): Position{
+    return new Position($data["X"], $data["Y"], $data["Z"], $this->getServer()->getWorldManager()->getWorldByName($data["Name"]));
+  }
 	
-	public function addNewTeleport(string $id, Position $from, Position $to){
+	public function addNewTeleport(string $id, Position $from, Position $to, bool $particle){
 	  $this->getDB()->set($id, [
 	    "From" => [
 	      "X" => floor($from->x),
@@ -196,13 +224,16 @@ class Main extends PluginBase implements Listener{
 	      "Y" => floor($to->y),
 	      "Z" => floor($to->z),
 	      "World" => $to->getWorld()->getFolderName()
-	    ]
+	    ],
+	    "Particle" => $particle
 	  ]);
+	  $this->getDB()->save();
 	}
 	
 	public function removeTeleport(string $id){
 	  if (!$this->getDB()->exists($id))return false;
 	  $this->getDB()->remove($id);
+	  $this->getDB()->save();
 	}
 	
 	public static function NewId(): int{
