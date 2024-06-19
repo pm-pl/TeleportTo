@@ -91,7 +91,7 @@ class Main extends PluginBase implements Listener{
   	    $to = $this->toPos($data["To"]);
   	    if ($from->distance($pos) < 2 || $to->distance($pos) < 2) {
   	      $player->sendMessage("§aId: §e" . $id);
-					unset(isset($this->get[$player->getName()]));
+					unset($this->get[$player->getName()]);
   	    }
   	  }
   	  return false;
