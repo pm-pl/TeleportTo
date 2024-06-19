@@ -35,11 +35,12 @@ use pocketmine\item\VanillaItems;
 use pocketmine\player\Player;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
+use pocketmine\plugin\PluginOwned;
 use pocketmine\nbt\tag\ListTag;
 use pocketmine\data\bedrock\EnchantmentIdMap;
 use pocketmine\item\enchantment\EnchantmentInstance;
 
-class TpToCommand extends Command{
+class TpToCommand extends Command implements PluginOwned{
   
   public array $from = [];
   
