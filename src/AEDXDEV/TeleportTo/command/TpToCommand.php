@@ -113,4 +113,7 @@ class TpToCommand extends Command implements PluginOwned{
 			break;
     }
   }
+  public function getOwningPlugin(): Main{
+		return $this->plugin;
+	}
 }
