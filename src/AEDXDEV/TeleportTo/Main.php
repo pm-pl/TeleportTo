@@ -208,7 +208,7 @@ class Main extends PluginBase implements Listener{
   }
   
   public function toPos(array $data): Position{
-    return new Position($data["X"], $data["Y"], $data["Z"], $this->getServer()->getWorldManager()->getWorldByName($data["Name"]));
+    return new Position($data["X"], $data["Y"], $data["Z"], $this->getServer()->getWorldManager()->getWorldByName($data["World"]));
   }
 	
 	public function addNewTeleport(string $id, Position $from, Position $to, bool $particle){
