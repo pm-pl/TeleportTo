@@ -104,7 +104,7 @@ class TpToCommand extends Command implements PluginOwned{
 			  $this->plugin->get[$name] = "";
 			  $sender->sendMessage("§aClick on the teleport place to get id");
 			break;
-			case "reomve":
+			case "remove":
 			case "delete":
 			  if (!isset($args[1])) {
 			    $sender->sendMessage("§cUsage: /" . $label . " " . $args[0] . "<Id: int>");
