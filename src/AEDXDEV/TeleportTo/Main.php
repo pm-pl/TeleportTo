@@ -77,21 +77,22 @@ class Main extends PluginBase implements Listener{
         "teleports.count" => 25,
       ]
     ]);
-    $this->getScheduler()->scheduleRepeatingTask(new ParticleTask(), 20);
+    $this->getScheduler()->scheduleRepeatingTask(new ParticleTask(), 11);
 	}
 	
 	public function onClick(PlayerInteractEvent $event){
 	  $player = $event->getPlayer();
+	  $name = $player->getName();
     $blockPos = $event->getBlock()->getPosition();
     $pos = Position::fromObject($blockPos->asVector3()->getSide($event->getFace()), $blockPos->getWorld());
 	  // get Id
-	  if (isset($this->get[$player->getName()])) {
+	  if (isset($this->get[$name])) {
   	  foreach ($this->getDB()->getAll() as $id => $data){
   	    $from = $this->toPos($data["From"]);
   	    $to = $this->toPos($data["To"]);
   	    if ($from->distance($pos) < 2 || $to->distance($pos) < 2) {
   	      $player->sendMessage("§aId: §e" . $id);
-					unset($this->get[$player->getName()]);
+  	      unset($this->get[$name]);
   	    }
   	  }
   	  return false;
@@ -105,24 +106,24 @@ class Main extends PluginBase implements Listener{
 	      $from = $this->toPos($data["From"]);
         $to = $this->toPos($data["To"]);
         if ($from->distance($pos) < 2) {
-          if (isset($this->save[$player->getName()])) {
+          if (isset($this->save[$name])) {
             $player->sendMessage("§gTeleport§bTo §f>§9>  §cYou can't add a Teleport here.");
           } else {
             $this->removeSureForm($player, $id);
           }
         }
       }
-  	  if (!isset($this->save[$player->getName()])) {
+  	  if (!isset($this->save[$name])) {
   	    // From
-  	    $this->save[$player->getName()] = $pos;
+  	    $this->save[$name] = $pos;
   	    $player->sendMessage("§aFrom: §e" . implode(" ", [$pos->x, $pos->y, $pos->z]));
   	  } else {
   	    // To
-  	    $from = $this->save[$player->getName()];
+  	    $from = $this->save[$name];
   	    $to = $pos;
   	    $player->sendMessage("§aTo: §e" . implode(" ", [$pos->x, $pos->y, $pos->z]));
   		  $this->addTeleportForm($player, $from, $to);
-  		  unset($this->save[$player->getName()]);
+  		  unset($this->save[$name]);
   	  }
   	  return false;
 	  }
@@ -137,7 +138,7 @@ class Main extends PluginBase implements Listener{
   	  $from = new Position($from["X"], $from["Y"], $from["Z"], $m->getWorldByName($from["World"]));
   	  $to = $data["To"];
   	  $to = new Position($to["X"], $to["Y"], $to["Z"], $m->getWorldByName($to["World"]));
-  	  if ($from->distance($player->getPosition()) < 1.3){
+  	  if ($from->distance($player->getPosition()) < 1.4){
   	    $player->teleport($to);
   	  }
     }
@@ -157,10 +158,8 @@ class Main extends PluginBase implements Listener{
 	      $player->sendMessage("§gTeleport§bTo §f>§9>  §cFailed to save Teleport");
 	    }
 	    $id = self::NewId();
-	    $from = explode(" ", $data[0]);
-	    $from = new Position($from[0], $from[1], $from[2], $player->getWorld());
-	    $to = explode(" ", $data[1]);
-	    $to = new Position($to[0], $to[1], $to[2], $player->getWorld());
+	    $from = $this->stringToPos($data[0], $player->getWorld());
+	    $to = $this->stringToPos($data[1], $player->getWorld());
 	    $this->addNewTeleport($id, $from, $to, $data[2]);
 	    $player->sendMessage("§gTeleport§bTo §f>§9>  §aThe Teleport §8[§7{$id}§8] §awas saved successfully");
 	  });
@@ -208,8 +207,13 @@ class Main extends PluginBase implements Listener{
     $player->sendForm($form);
   }
   
-  public function toPos(array $data): Position{
+  private function toPos(array $data): Position{
     return new Position($data["X"], $data["Y"], $data["Z"], $this->getServer()->getWorldManager()->getWorldByName($data["World"]));
+  }
+  
+  private function stringToPos(string $string, World $world): Position{
+    [$x, $y, $z] = explode(" ", $string);
+    return new Position($x, $y, $z, $world);
   }
 	
 	public function addNewTeleport(string $id, Position $from, Position $to, bool $particle){
@@ -237,7 +241,7 @@ class Main extends PluginBase implements Listener{
 	  $this->getDB()->save();
 	}
 	
-	public static function NewId(): int{
+	private static function NewId(): int{
 	  return count(array_keys(Main::getInstance()->getDB()->getAll()));
 	}
 }
