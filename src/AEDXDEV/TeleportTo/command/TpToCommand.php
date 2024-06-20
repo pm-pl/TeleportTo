@@ -54,7 +54,6 @@ class TpToCommand extends Command implements PluginOwned{
   
   public function execute(CommandSender $sender, string $label, array $args){
     $name = $sender->getName();
-    $pos = $sender->getPosition();
     switch ($args[0] ?? "help") {
       case "help":
 				$sender->sendMessage("§e========================");
@@ -70,7 +69,7 @@ class TpToCommand extends Command implements PluginOwned{
         if (isset($args[1])) {
           $player = $this->plugin->getServer()->getPlayerByPrefix($args[1]);
         }
-        if (!$player instanceof Player)return;
+        if (!$player instanceof Player)return false;
         $item = VanillaItems::DIAMOND_HOE()->setCustomName(" §aTeleport§bTo ");
         $tag = $item->getNamedTag();
         $tag->setTag(Item::TAG_ENCH, new ListTag());
@@ -80,13 +79,15 @@ class TpToCommand extends Command implements PluginOwned{
         $player->getInventory()->addItem($item);
 			break;
 			case "from":
-			  if (!$sender instanceof Player)return;
+			  if (!$sender instanceof Player)return false;
+			  $pos = $sender->getPosition();
 			  $from = Position::fromObject ($pos->asVector3()->floor(), $pos->getWorld());
 			  $this->from[$name] = $from;
 			  $sender->sendMessage("§aFrom: §e" . implode(" ", [$from->x, $from->y, $from->z]));
 			break;
 			case "to":
-			  if (!$sender instanceof Player)return;
+			  if (!$sender instanceof Player)return false;
+			  $pos = $sender->getPosition();
 			  if (!isset($this->from[$name])) {
 			    $sender->sendMessage("use '/" . $label . " from' before '/" . $label . " to'");
 			    break;
@@ -98,6 +99,7 @@ class TpToCommand extends Command implements PluginOwned{
 			  unset($this->from[$name]);
 			break;
 			case "get":
+			  if (!$sender instanceof Player)return false;
 			  if (isset($this->plugin->get[$name])){
 			    $sender->sendMessage("§eYou are already used this command.");
 			    $sender->sendMessage("§eClick on a teleport place to get id");
