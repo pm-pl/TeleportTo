@@ -36,6 +36,7 @@ use pocketmine\player\Player;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\plugin\PluginOwned;
+use pocketmine\world\Position;
 use pocketmine\nbt\tag\ListTag;
 use pocketmine\data\bedrock\EnchantmentIdMap;
 use pocketmine\item\enchantment\EnchantmentInstance;
@@ -53,6 +54,7 @@ class TpToCommand extends Command implements PluginOwned{
   
   public function execute(CommandSender $sender, string $label, array $args){
     $name = $sender->getName();
+    $pos = $sender->getPosition();
     switch ($args[0] ?? "help") {
       case "help":
 				$sender->sendMessage("§e========================");
@@ -79,7 +81,7 @@ class TpToCommand extends Command implements PluginOwned{
 			break;
 			case "from":
 			  if (!$sender instanceof Player)return;
-			  $from = $sender->getPosition();
+			  $from = Position::fromObject ($pos->asVector3()->floor(), $pos->getWorld());
 			  $this->from[$name] = $from;
 			  $sender->sendMessage("§aFrom: §e" . implode(" ", [$from->x, $from->y, $from->z]));
 			break;
@@ -90,7 +92,7 @@ class TpToCommand extends Command implements PluginOwned{
 			    break;
 			  }
 			  $from = $this->from[$name];
-			  $to = $sender->getPosition();
+			  $to = Position::fromObject ($pos->asVector3()->floor(), $pos->getWorld());
 			  $sender->sendMessage("§aTo: §e" . implode(" ", [$to->x, $to->y, $to->z]));
 			  $this->plugin->addTeleportForm($sender, $from, $to);
 			  unset($this->from[$name]);
@@ -107,12 +109,13 @@ class TpToCommand extends Command implements PluginOwned{
 			case "remove":
 			case "delete":
 			  if (!isset($args[1])) {
-			    $sender->sendMessage("§cUsage: /" . $label . " " . $args[0] . "<Id: int>");
+			    $sender->sendMessage("§cUsage: /{$label} {$args[0]} <Id: int>");
 			  }
 			  $this->plugin->removeTeleport($args[1]);
 			break;
     }
   }
+  
   public function getOwningPlugin(): Main{
 		return $this->plugin;
 	}
