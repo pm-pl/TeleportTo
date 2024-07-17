@@ -54,8 +54,8 @@ class TpToCommand extends Command implements PluginOwned{
   
   public function execute(CommandSender $sender, string $label, array $args): bool{
     $name = $sender->getName();
-    if ($args[1] !== "item") {
-      if (!$player instanceof Player)return false;
+    if ($args[0] !== "item") {
+      if (!$sender instanceof Player)return false;
     }
     $pos = $sender instanceof Player ? $sender->getPosition() : null;
     switch ($args[0] ?? "help") {
