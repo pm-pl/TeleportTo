@@ -52,7 +52,7 @@ class TpToCommand extends Command implements PluginOwned{
     $this->setPermission("teleportto.cmd");
   }
   
-  public function execute(CommandSender $sender, string $label, array $args): bool{
+  public function execute(CommandSender $sender, string $label, array $args){
     $name = $sender->getName();
     if ($args[0] !== "item") {
       if (!$sender instanceof Player)return false;
