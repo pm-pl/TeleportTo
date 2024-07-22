@@ -112,10 +112,12 @@ class TpToCommand extends Command implements PluginOwned{
 			case "delete":
 			  if (!isset($args[1])) {
 			    $sender->sendMessage("§cUsage: /{$label} {$args[0]} <Id: int>");
+        return false;
 			  }
 			  $this->plugin->removeTeleport($args[1]);
 			break;
     }
+    return true;
   }
   
   public function getOwningPlugin(): Main{
