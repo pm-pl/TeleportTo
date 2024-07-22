@@ -54,11 +54,12 @@ class TpToCommand extends Command implements PluginOwned{
   
   public function execute(CommandSender $sender, string $label, array $args){
     $name = $sender->getName();
+    $args[0] ??= "help";
     if ($args[0] !== "item") {
       if (!$sender instanceof Player)return false;
     }
     $pos = $sender instanceof Player ? $sender->getPosition() : null;
-    switch ($args[0] !== "" ? $args[0] : "help") {
+    switch ($args[0]) {
       case "help":
 				$sender->sendMessage("§e========================");
 				$sender->sendMessage("§a- /" . $label . " item - give setup item");
